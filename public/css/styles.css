@@ -1,0 +1,23 @@
+/* Custom styles */
+@layer components {
+    /* Form input focus styles */
+    input:focus, select:focus {
+        @apply ring-2 ring-blue-500 ring-opacity-50;
+    }
+    
+    /* Progress bar transition */
+    #progressBar {
+        transition: width 0.5s ease-in-out;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .w-64 {
+            width: 100%;
+        }
+        
+        .flex {
+            flex-direction: column;
+        }
+    }
+} 

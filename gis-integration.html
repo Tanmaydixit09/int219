@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrack Pro - GIS Integration</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E8F5E9 100%);
+            min-height: 100vh;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+        }
+
+        .heading-primary {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #1B5E20;
+        }
+        .dark .heading-primary {
+            color: #4CAF50;
+        }
+
+        .feature-card {
+            transition: all 0.3s ease;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .map-container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(46, 125, 50, 0.2);
+            border-radius: 1rem;
+            height: 400px;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .dark .map-container {
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%);
+            animation: slideIn 0.5s ease-out forwards;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .dark .sidebar {
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-right: 1px solid rgba(76, 175, 80, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-link {
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .dark .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(0.5rem);
+            color: #ffffff;
+        }
+        .dark .nav-link:hover, .dark .nav-link.active {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Layout -->
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 fixed h-full">
+            <div class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="p-6 border-b border-white/10">
+                    <img src="logo.svg" alt="AgriTrack Pro" class="h-12">
+                </div>
+
+                <!-- User Profile -->
+                <div class="p-4 border-b border-white/10">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <i class="fas fa-user text-white/80 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white" id="userName">Loading...</h3>
+                            <p class="text-sm text-white/60">Farmer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="index.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-home text-lg"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="dashboard.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-chart-line text-lg"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="my_crops.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-leaf text-lg"></i>
+                        <span>My Crops</span>
+                    </a>
+                    <a href="field_map.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-map-marked-alt text-lg"></i>
+                        <span>Field Map</span>
+                    </a>
+                    <a href="settings.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-cog text-lg"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Logout Button -->
+                <div class="p-6 border-t border-white/10">
+                    <button onclick="logout()" class="nav-link w-full flex items-center p-3 space-x-3">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Header -->
+            <div class="mb-8">
+                <h1 class="heading-primary text-4xl mb-4">GIS Integration</h1>
+                <p class="text-gray-600 dark:text-gray-400 text-lg">
+                    Harness the power of Geographic Information Systems for advanced agricultural tracking and analysis.
+                </p>
+            </div>
+
+            <!-- Features Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <!-- Feature 1 -->
+                <div class="feature-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mr-4">
+                            <i class="fas fa-map-marked-alt text-green-600 dark:text-green-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Precision Mapping</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Accurately map and track your agricultural fields with GPS coordinates and satellite imagery.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mr-4">
+                            <i class="fas fa-chart-area text-green-600 dark:text-green-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Spatial Analysis</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Analyze spatial patterns and relationships in your agricultural data for better decision-making.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mr-4">
+                            <i class="fas fa-layer-group text-green-600 dark:text-green-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Multi-layer Visualization</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        View multiple data layers including soil types, weather patterns, and crop health indicators.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center mr-4">
+                            <i class="fas fa-satellite-dish text-green-600 dark:text-green-400 text-xl"></i>
+                        </div>
+                        <h3 class="text-xl font-semibold">Satellite Integration</h3>
+                    </div>
+                    <p class="text-gray-600 dark:text-gray-400">
+                        Access high-resolution satellite imagery for detailed field monitoring and analysis.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Interactive Map Demo -->
+            <div class="mb-12">
+                <h2 class="text-2xl font-semibold mb-4">Interactive Map Demo</h2>
+                <div id="map" class="map-container"></div>
+            </div>
+
+            <!-- Benefits Section -->
+            <div class="mb-12">
+                <h2 class="text-2xl font-semibold mb-6">Benefits of GIS Integration</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h3 class="text-lg font-semibold mb-3">Improved Decision Making</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Make data-driven decisions based on spatial analysis and real-time field data.
+                        </p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h3 class="text-lg font-semibold mb-3">Resource Optimization</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Optimize resource allocation and reduce waste through precise field mapping.
+                        </p>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h3 class="text-lg font-semibold mb-3">Enhanced Monitoring</h3>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            Monitor crop health and field conditions with satellite imagery and spatial data.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center">
+                <div class="text-sm text-gray-500 dark:text-gray-400">
+                    © 2024 AgriTrack Pro. All rights reserved.
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Powered by</span>
+                    <span class="font-montserrat font-semibold text-green-600 dark:text-green-400 tracking-wider">SKrock</span>
+                    <span class="text-xs text-gray-400">™</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let map;
+        let satelliteLayer;
+        let streetLayer;
+
+        // Initialize map
+        function initializeMap() {
+            map = L.map('map').setView([0, 0], 2);
+            
+            // Add base layers
+            streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri'
+            });
+
+            // Add layer control
+            L.control.layers({
+                'Street Map': streetLayer,
+                'Satellite': satelliteLayer
+            }).addTo(map);
+        }
+
+        // Theme handling
+        function initializeTheme() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            
+            if (theme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        }
+
+        // Function to check session
+        async function checkSession() {
+            try {
+                const userData = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
+                if (!userData || !userData.id) {
+                    return false;
+                }
+
+                const response = await fetch(`api/check_session.php?user_id=${userData.id}`);
+                const data = await response.json();
+                return data.status === 'success';
+            } catch (error) {
+                console.error('Session check error:', error);
+                return false;
+            }
+        }
+
+        // Function to handle logout
+        async function logout() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData && userData.id) {
+                    const response = await fetch('api/logout.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userData.id
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                // Clear user data and redirect to login page
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize
+        async function initialize() {
+            initializeTheme();
+            const isValidSession = await checkSession();
+            if (!isValidSession) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userData = JSON.parse(localStorage.getItem('user'));
+            document.getElementById('userName').textContent = userData.email.split('@')[0] || 'User';
+            
+            initializeMap();
+        }
+
+        // Document ready
+        $(document).ready(function() {
+            initialize();
+        });
+    </script>
+</body>
+</html> 

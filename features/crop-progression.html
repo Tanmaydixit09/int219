@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrack Pro - Crop Progression Tracking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link rel="stylesheet" href="../styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .feature-hero {
+            background: linear-gradient(135deg, rgba(243, 244, 246, 0.9), rgba(232, 245, 233, 0.9));
+            min-height: 60vh;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dark .feature-hero {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9), rgba(45, 45, 45, 0.9));
+        }
+        
+        .feature-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .feature-section {
+            padding: 4rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .dark .feature-card {
+            background: #2d2d2d;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .crop-stage {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .crop-stage::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(to bottom, #2E7D32, #4CAF50);
+            border-radius: 2px;
+        }
+
+        .stage-icon {
+            position: absolute;
+            left: -1rem;
+            top: 0;
+            width: 2rem;
+            height: 2rem;
+            background: #2E7D32;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .dark .stage-icon {
+            background: #4CAF50;
+        }
+    </style>
+</head>
+<body class="bg-nature min-h-screen">
+    <!-- Navbar -->
+    <nav class="fixed top-0 left-0 right-0 bg-white bg-opacity-90 shadow-lg z-40 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex justify-between h-24">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="../index.html">
+                            <img src="../logo.svg" alt="AgriTrack Pro Logo" class="h-12 w-12">
+                        </a>
+                        <span class="ml-4 text-2xl font-bold text-nature">AgriTrack Pro</span>
+                    </div>
+                    <div class="hidden sm:flex sm:items-center sm:ml-10 space-x-8">
+                        <a href="../index.html" class="nav-link text-lg font-medium text-gray-700 hover:text-nature transition-all duration-500 hover:scale-105 hover:font-semibold relative group">
+                            <span class="relative z-10">Home</span>
+                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-nature transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></span>
+                        </a>
+                        <a href="../index.html#features" class="nav-link text-lg font-medium text-gray-700 hover:text-nature transition-all duration-500 hover:scale-105 hover:font-semibold relative group">
+                            <span class="relative z-10">Features</span>
+                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-nature transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></span>
+                        </a>
+                        <a href="../index.html#about" class="nav-link text-lg font-medium text-gray-700 hover:text-nature transition-all duration-500 hover:scale-105 hover:font-semibold relative group">
+                            <span class="relative z-10">About</span>
+                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-nature transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></span>
+                        </a>
+                        <a href="../index.html#contact" class="nav-link text-lg font-medium text-gray-700 hover:text-nature transition-all duration-500 hover:scale-105 hover:font-semibold relative group">
+                            <span class="relative z-10">Contact</span>
+                            <span class="absolute bottom-0 left-0 w-full h-0.5 bg-nature transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden sm:flex sm:items-center">
+                    <button onclick="window.location.href='../login.html'" class="bg-nature text-white px-6 py-3 rounded-md text-lg font-medium hover:bg-nature-dark transition-colors duration-300">
+                        Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Feature Hero -->
+    <div class="feature-hero pt-24">
+        <div class="feature-content">
+            <div class="text-center">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Crop Progression Tracking</h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Monitor and analyze crop growth stages with real-time data visualization.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Content -->
+    <div class="feature-section">
+        <div class="feature-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="feature-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Growth Stage Monitoring</h2>
+                    <div class="space-y-6">
+                        <div class="crop-stage">
+                            <div class="stage-icon">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">Germination</h3>
+                            <p class="text-gray-600">Track seed germination rates and early growth indicators.</p>
+                        </div>
+                        <div class="crop-stage">
+                            <div class="stage-icon">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">Vegetative Growth</h3>
+                            <p class="text-gray-600">Monitor plant development and leaf area index.</p>
+                        </div>
+                        <div class="crop-stage">
+                            <div class="stage-icon">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">Flowering</h3>
+                            <p class="text-gray-600">Track flowering patterns and pollination success.</p>
+                        </div>
+                        <div class="crop-stage">
+                            <div class="stage-icon">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-800">Harvest</h3>
+                            <p class="text-gray-600">Monitor yield predictions and harvest readiness.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Data Visualization</h2>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Growth Charts</h3>
+                            <p class="text-gray-600">Interactive charts showing crop development over time.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Health Indicators</h3>
+                            <p class="text-gray-600">Real-time monitoring of plant health and stress factors.</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-lg">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Yield Predictions</h3>
+                            <p class="text-gray-600">Advanced algorithms for accurate yield forecasting.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Theme toggle functionality
+            const $themeToggle = $('#theme-toggle');
+            const $themeIcon = $('#theme-icon');
+            const $html = $('html');
+
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                $html.toggleClass('dark', savedTheme === 'dark');
+            }
+
+            // Toggle theme on button click
+            $themeToggle.on('click', function() {
+                $html.toggleClass('dark');
+                const theme = $html.hasClass('dark') ? 'dark' : 'light';
+                localStorage.setItem('theme', theme);
+            });
+        });
+    </script>
+</body>
+</html> 

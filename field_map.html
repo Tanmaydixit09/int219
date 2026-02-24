@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrack Pro - Field Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* Reuse the same styles from dashboard.html */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E8F5E9 100%);
+            min-height: 100vh;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+        }
+
+        .heading-primary {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #1B5E20;
+        }
+        .dark .heading-primary {
+            color: #4CAF50;
+        }
+
+        /* Map container styles */
+        .map-container {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(46, 125, 50, 0.2);
+            border-radius: 1rem;
+            height: calc(100vh - 200px);
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .dark .map-container {
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
+        /* Map controls styles */
+        .map-controls {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(46, 125, 50, 0.2);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            margin: 0.5rem;
+        }
+        .dark .map-controls {
+            background: rgba(31, 41, 55, 0.9);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            background: linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%);
+            animation: slideIn 0.5s ease-out forwards;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .dark .sidebar {
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-right: 1px solid rgba(76, 175, 80, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-link {
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .dark .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(0.5rem);
+            color: #ffffff;
+        }
+        .dark .nav-link:hover, .dark .nav-link.active {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Layout -->
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 fixed h-full">
+            <div class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="p-6 border-b border-white/10">
+                    <img src="logo.svg" alt="AgriTrack Pro" class="h-12">
+                </div>
+
+                <!-- User Profile -->
+                <div class="p-4 border-b border-white/10">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <i class="fas fa-user text-white/80 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white" id="userName">Loading...</h3>
+                            <p class="text-sm text-white/60">Farmer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="index.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-home text-lg"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="dashboard.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-chart-line text-lg"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="my_crops.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-leaf text-lg"></i>
+                        <span>My Crops</span>
+                    </a>
+                    <a href="field_map.html" class="nav-link active flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-map-marked-alt text-lg"></i>
+                        <span>Field Map</span>
+                    </a>
+                    <a href="settings.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-cog text-lg"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Logout Button -->
+                <div class="p-6 border-t border-white/10">
+                    <button onclick="logout()" class="nav-link w-full flex items-center p-3 space-x-3">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="heading-primary text-3xl mb-2">Field Map</h1>
+                    <p class="text-gray-600 dark:text-gray-400">View and manage your crop locations</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button onclick="toggleSatelliteView()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors duration-300">
+                        <i class="fas fa-satellite-dish mr-2"></i>Toggle Satellite View
+                    </button>
+                    <button onclick="getCurrentLocation()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-300">
+                        <i class="fas fa-location-arrow mr-2"></i>My Location
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map Container -->
+            <div id="map" class="map-container"></div>
+        </div>
+    </div>
+
+    <script>
+        let map;
+        let satelliteLayer;
+        let streetLayer;
+        let cropMarkers = [];
+
+        // Initialize map
+        function initializeMap() {
+            map = L.map('map').setView([0, 0], 2);
+            
+            // Add base layers
+            streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '© Esri'
+            });
+
+            // Load crop markers
+            loadCropMarkers();
+        }
+
+        // Load crop markers
+        async function loadCropMarkers() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                const response = await fetch(`api/get_crops.php?user_id=${userData.id}`);
+                const data = await response.json();
+
+                if (data.status === 'success' && data.data) {
+                    // Clear existing markers
+                    cropMarkers.forEach(marker => map.removeLayer(marker));
+                    cropMarkers = [];
+
+                    // Add new markers
+                    data.data.forEach(crop => {
+                        if (crop.latitude && crop.longitude) {
+                            const marker = L.marker([crop.latitude, crop.longitude])
+                                .bindPopup(createCropPopup(crop))
+                                .addTo(map);
+                            cropMarkers.push(marker);
+                        }
+                    });
+
+                    // Fit map to show all markers
+                    if (cropMarkers.length > 0) {
+                        const group = L.featureGroup(cropMarkers);
+                        map.fitBounds(group.getBounds());
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading crop markers:', error);
+            }
+        }
+
+        // Create crop popup content
+        function createCropPopup(crop) {
+            return `
+                <div class="p-2">
+                    <h3 class="font-semibold text-lg">${crop.crop_type}</h3>
+                    <p class="text-sm text-gray-600">Field Size: ${crop.field_size} acres</p>
+                    <p class="text-sm text-gray-600">Status: ${getStatusText(crop)}</p>
+                    <p class="text-sm text-gray-600">Planting Date: ${formatDate(crop.planting_date)}</p>
+                    <p class="text-sm text-gray-600">Expected Harvest: ${formatDate(crop.harvest_date || crop.expected_harvest_date)}</p>
+                </div>
+            `;
+        }
+
+        // Toggle satellite view
+        function toggleSatelliteView() {
+            if (map.hasLayer(streetLayer)) {
+                map.removeLayer(streetLayer);
+                satelliteLayer.addTo(map);
+            } else {
+                map.removeLayer(satelliteLayer);
+                streetLayer.addTo(map);
+            }
+        }
+
+        // Get current location
+        function getCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    position => {
+                        const { latitude, longitude } = position.coords;
+                        map.setView([latitude, longitude], 15);
+                        L.marker([latitude, longitude])
+                            .bindPopup('Your current location')
+                            .addTo(map);
+                    },
+                    error => {
+                        console.error('Error getting location:', error);
+                        alert('Unable to get your location. Please check your browser settings.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        // Helper functions
+        function formatDate(dateString) {
+            if (!dateString) return 'Not set';
+            const date = new Date(dateString);
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function getStatusText(cropData) {
+            const harvestDate = cropData.harvest_date || cropData.expected_harvest_date;
+            if (!harvestDate) return 'Date not set';
+
+            const today = new Date();
+            const harvestDateObj = new Date(harvestDate);
+            const daysUntilHarvest = Math.ceil((harvestDateObj - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilHarvest <= 0) return 'Ready for Harvest';
+            if (daysUntilHarvest <= 30) return 'Harvesting Soon';
+            return 'Growing';
+        }
+
+        // Theme handling
+        function initializeTheme() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            
+            if (theme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        }
+
+        // Function to check session
+        async function checkSession() {
+            try {
+                const userData = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
+                if (!userData || !userData.id) {
+                    return false;
+                }
+
+                const response = await fetch(`api/check_session.php?user_id=${userData.id}`);
+                const data = await response.json();
+                return data.status === 'success';
+            } catch (error) {
+                console.error('Session check error:', error);
+                return false;
+            }
+        }
+
+        // Function to handle logout
+        async function logout() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData && userData.id) {
+                    const response = await fetch('api/logout.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userData.id
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                // Clear user data and redirect to login page
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize
+        async function initialize() {
+            initializeTheme();
+            const isValidSession = await checkSession();
+            if (!isValidSession) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userData = JSON.parse(localStorage.getItem('user'));
+            document.getElementById('userName').textContent = userData.email.split('@')[0] || 'User';
+            
+            initializeMap();
+        }
+
+        // Document ready
+        $(document).ready(function() {
+            initialize();
+        });
+    </script>
+</body>
+</html> 

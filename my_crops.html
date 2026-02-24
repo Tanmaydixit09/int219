@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriTrack Pro - My Crops</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Reuse the same styles from dashboard.html */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #F3F4F6 0%, #E8F5E9 100%);
+            min-height: 100vh;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+        }
+
+        .heading-primary {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #1B5E20;
+        }
+        .dark .heading-primary {
+            color: #4CAF50;
+        }
+
+        .crop-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            border: 1px solid rgba(46, 125, 50, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        .dark .crop-card {
+            background: rgba(45, 45, 45, 0.9);
+            border: 1px solid rgba(76, 175, 80, 0.2);
+        }
+        .crop-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .dark .crop-card:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-badge {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        .status-growing {
+            background: rgba(46, 125, 50, 0.1);
+            color: #2E7D32;
+        }
+        .dark .status-growing {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+        .status-harvesting {
+            background: rgba(251, 191, 36, 0.1);
+            color: #D97706;
+        }
+        .dark .status-harvesting {
+            background: rgba(251, 191, 36, 0.1);
+            color: #FBBF24;
+        }
+        .status-ready {
+            background: rgba(239, 68, 68, 0.1);
+            color: #DC2626;
+        }
+        .dark .status-ready {
+            background: rgba(239, 68, 68, 0.1);
+            color: #EF4444;
+        }
+
+        /* Sidebar styles */
+        .sidebar {
+            background: linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%);
+            animation: slideIn 0.5s ease-out forwards;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        .dark .sidebar {
+            background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%);
+            border-right: 1px solid rgba(76, 175, 80, 0.2);
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .nav-link {
+            font-family: 'Montserrat', sans-serif;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .dark .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(0.5rem);
+            color: #ffffff;
+        }
+        .dark .nav-link:hover, .dark .nav-link.active {
+            background: rgba(76, 175, 80, 0.1);
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Main Layout -->
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 fixed h-full">
+            <div class="flex flex-col h-full">
+                <!-- Logo -->
+                <div class="p-6 border-b border-white/10">
+                    <img src="logo.svg" alt="AgriTrack Pro" class="h-12">
+                </div>
+
+                <!-- User Profile -->
+                <div class="p-4 border-b border-white/10">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                            <i class="fas fa-user text-white/80 text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-semibold text-white" id="userName">Loading...</h3>
+                            <p class="text-sm text-white/60">Farmer</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <nav class="flex-1 p-4 space-y-2">
+                    <a href="index.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-home text-lg"></i>
+                        <span>Home</span>
+                    </a>
+                    <a href="dashboard.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-chart-line text-lg"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="my_crops.html" class="nav-link active flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-leaf text-lg"></i>
+                        <span>My Crops</span>
+                    </a>
+                    <a href="field_map.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-map-marked-alt text-lg"></i>
+                        <span>Field Map</span>
+                    </a>
+                    <a href="settings.html" class="nav-link flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-300">
+                        <i class="fas fa-cog text-lg"></i>
+                        <span>Settings</span>
+                    </a>
+                </nav>
+
+                <!-- Logout Button -->
+                <div class="p-6 border-t border-white/10">
+                    <button onclick="logout()" class="nav-link w-full flex items-center p-3 space-x-3">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 ml-64 p-8">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="heading-primary text-3xl mb-2">My Crops</h1>
+                    <p class="text-gray-600 dark:text-gray-400">Manage and monitor your crops</p>
+                </div>
+                <button onclick="showAddCropModal()" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>Add New Crop
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm">
+                <div class="flex flex-wrap gap-4">
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Crop Type</label>
+                        <select id="filterCropType" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="">All Types</option>
+                            <option value="Wheat">Wheat</option>
+                            <option value="Rice">Rice</option>
+                            <option value="Corn">Corn</option>
+                            <option value="Soybean">Soybean</option>
+                            <option value="Cotton">Cotton</option>
+                            <option value="Potato">Potato</option>
+                            <option value="Tomato">Tomato</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                        <select id="filterStatus" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="">All Statuses</option>
+                            <option value="growing">Growing</option>
+                            <option value="harvesting">Harvesting Soon</option>
+                            <option value="ready">Ready for Harvest</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 min-w-[200px]">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sort By</label>
+                        <select id="sortBy" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option value="date">Planting Date</option>
+                            <option value="harvest">Harvest Date</option>
+                            <option value="type">Crop Type</option>
+                            <option value="size">Field Size</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Crops Grid -->
+            <div id="cropsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Crop cards will be added here -->
+            </div>
+
+            <!-- Add Crop Modal -->
+            <div id="addCropModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-8 w-full max-w-2xl">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Add New Crop</h2>
+                        <button onclick="hideAddCropModal()" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <form id="cropForm" onsubmit="handleCropFormSubmit(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Crop Type</label>
+                                <select id="cropType" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                    <option value="">Select Crop Type</option>
+                                    <option value="Wheat">Wheat</option>
+                                    <option value="Rice">Rice</option>
+                                    <option value="Corn">Corn</option>
+                                    <option value="Soybean">Soybean</option>
+                                    <option value="Cotton">Cotton</option>
+                                    <option value="Potato">Potato</option>
+                                    <option value="Tomato">Tomato</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Field Size (acres)</label>
+                                <input type="number" id="fieldSize" required min="0.1" step="0.1" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Planting Date</label>
+                                <input type="date" id="plantingDate" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expected Harvest Date</label>
+                                <input type="date" id="harvestDate" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                                <div class="relative">
+                                    <input type="text" id="location" required class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Enter field location">
+                                    <button type="button" onclick="getCurrentLocation()" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                                <textarea id="notes" rows="3" class="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Add any additional notes about the crop..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-4 mt-6">
+                            <button type="button" onclick="hideAddCropModal()" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                                Save Crop
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme handling
+        function initializeTheme() {
+            const theme = localStorage.getItem('theme') || 'light';
+            const html = document.documentElement;
+            
+            if (theme === 'dark') {
+                html.classList.add('dark');
+            } else {
+                html.classList.remove('dark');
+            }
+        }
+
+        // Function to check session
+        async function checkSession() {
+            try {
+                const userData = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user'));
+                if (!userData || !userData.id) {
+                    return false;
+                }
+
+                const response = await fetch(`api/check_session.php?user_id=${userData.id}`);
+                const data = await response.json();
+                return data.status === 'success';
+            } catch (error) {
+                console.error('Session check error:', error);
+                return false;
+            }
+        }
+
+        // Function to load crops
+        async function loadCrops() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (!userData) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch(`api/get_crops.php?user_id=${userData.id}`);
+                const data = await response.json();
+
+                if (data.status === 'success' && data.data) {
+                    const cropsGrid = document.getElementById('cropsGrid');
+                    cropsGrid.innerHTML = '';
+                    
+                    data.data.forEach(crop => {
+                        addCropCard(crop);
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading crops:', error);
+            }
+        }
+
+        // Function to add crop card
+        function addCropCard(cropData) {
+            const cropsGrid = document.getElementById('cropsGrid');
+            const cropCard = document.createElement('div');
+            cropCard.className = 'crop-card p-6';
+            cropCard.setAttribute('data-crop-id', cropData.id);
+            cropCard.setAttribute('data-crop-type', cropData.crop_type);
+            cropCard.setAttribute('data-status', getStatusText(cropData).toLowerCase().replace(' ', '-'));
+            
+            const plantingDate = new Date(cropData.planting_date);
+            const harvestDate = new Date(cropData.harvest_date || cropData.expected_harvest_date);
+            const today = new Date();
+            const progress = Math.min(Math.max((today - plantingDate) / (harvestDate - plantingDate) * 100, 0), 100);
+
+            cropCard.innerHTML = `
+                <div class="flex justify-between items-start mb-4">
+                    <h3 class="text-xl font-semibold text-gray-900 dark:text-white">${cropData.crop_type}</h3>
+                    <span class="status-badge ${getStatusClass(cropData)}">
+                        ${getStatusText(cropData)}
+                    </span>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Field Size</p>
+                        <p class="font-medium text-gray-900 dark:text-white">${cropData.field_size} acres</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Location</p>
+                        <p class="font-medium text-gray-900 dark:text-white">${cropData.location}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Planting Date</p>
+                        <p class="font-medium text-gray-900 dark:text-white">${formatDate(cropData.planting_date)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Expected Harvest</p>
+                        <p class="font-medium text-gray-900 dark:text-white">${formatDate(cropData.harvest_date || cropData.expected_harvest_date)}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Growth Progress</p>
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-1">
+                            <div class="bg-green-600 h-2.5 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">${Math.round(progress)}% complete</p>
+                    </div>
+                    ${cropData.notes ? `
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Notes</p>
+                            <p class="text-gray-700 dark:text-gray-300">${cropData.notes}</p>
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="mt-6 flex justify-end space-x-2">
+                    <button onclick="editCrop(${cropData.id})" class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteCrop(${cropData.id})" class="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            
+            cropsGrid.appendChild(cropCard);
+        }
+
+        // Helper functions
+        function formatDate(dateString) {
+            if (!dateString) return 'Not set';
+            const date = new Date(dateString);
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function getStatusClass(cropData) {
+            const harvestDate = cropData.harvest_date || cropData.expected_harvest_date;
+            if (!harvestDate) return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+
+            const today = new Date();
+            const harvestDateObj = new Date(harvestDate);
+            const daysUntilHarvest = Math.ceil((harvestDateObj - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilHarvest <= 0) return 'status-ready';
+            if (daysUntilHarvest <= 30) return 'status-harvesting';
+            return 'status-growing';
+        }
+
+        function getStatusText(cropData) {
+            const harvestDate = cropData.harvest_date || cropData.expected_harvest_date;
+            if (!harvestDate) return 'Date not set';
+
+            const today = new Date();
+            const harvestDateObj = new Date(harvestDate);
+            const daysUntilHarvest = Math.ceil((harvestDateObj - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysUntilHarvest <= 0) return 'Ready for Harvest';
+            if (daysUntilHarvest <= 30) return 'Harvesting Soon';
+            return 'Growing';
+        }
+
+        // Modal functions
+        function showAddCropModal() {
+            document.getElementById('addCropModal').classList.remove('hidden');
+        }
+
+        function hideAddCropModal() {
+            document.getElementById('addCropModal').classList.add('hidden');
+        }
+
+        // Form submission
+        async function handleCropFormSubmit(event) {
+            event.preventDefault();
+            
+            const formData = {
+                user_id: JSON.parse(localStorage.getItem('user')).id,
+                crop_type: document.getElementById('cropType').value,
+                field_size: document.getElementById('fieldSize').value,
+                planting_date: document.getElementById('plantingDate').value,
+                expected_harvest_date: document.getElementById('harvestDate').value,
+                location: document.getElementById('location').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                const response = await fetch('api/save_crop.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    hideAddCropModal();
+                    addCropCard(data.data);
+                    showSuccessMessage('Crop added successfully!');
+                    document.getElementById('cropForm').reset();
+                } else {
+                    alert(data.message || 'Error saving crop data');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('An error occurred while saving crop data');
+            }
+        }
+
+        // Filter functions
+        function applyFilters() {
+            const cropType = document.getElementById('filterCropType').value.toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+            const sortBy = document.getElementById('sortBy').value;
+
+            const cropCards = Array.from(document.querySelectorAll('.crop-card'));
+            
+            // Filter
+            cropCards.forEach(card => {
+                const matchesType = !cropType || card.getAttribute('data-crop-type').toLowerCase().includes(cropType);
+                const matchesStatus = !status || card.getAttribute('data-status').includes(status);
+                card.style.display = matchesType && matchesStatus ? '' : 'none';
+            });
+
+            // Sort
+            const visibleCards = cropCards.filter(card => card.style.display !== 'none');
+            visibleCards.sort((a, b) => {
+                switch(sortBy) {
+                    case 'date':
+                        return new Date(a.querySelector('p:nth-child(2)').textContent) - new Date(b.querySelector('p:nth-child(2)').textContent);
+                    case 'harvest':
+                        return new Date(a.querySelector('p:nth-child(4)').textContent) - new Date(b.querySelector('p:nth-child(4)').textContent);
+                    case 'type':
+                        return a.getAttribute('data-crop-type').localeCompare(b.getAttribute('data-crop-type'));
+                    case 'size':
+                        return parseFloat(a.querySelector('p:nth-child(1)').textContent) - parseFloat(b.querySelector('p:nth-child(1)').textContent);
+                    default:
+                        return 0;
+                }
+            });
+
+            // Reorder
+            const grid = document.getElementById('cropsGrid');
+            visibleCards.forEach(card => grid.appendChild(card));
+        }
+
+        // Event listeners
+        document.getElementById('filterCropType').addEventListener('change', applyFilters);
+        document.getElementById('filterStatus').addEventListener('change', applyFilters);
+        document.getElementById('sortBy').addEventListener('change', applyFilters);
+
+        // Function to handle dark mode toggle
+        function handleDarkModeToggle() {
+            const isDarkMode = document.getElementById('darkModeToggle').checked;
+            const html = document.documentElement;
+            
+            if (isDarkMode) {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Function to handle logout
+        async function logout() {
+            try {
+                const userData = JSON.parse(localStorage.getItem('user'));
+                if (userData && userData.id) {
+                    const response = await fetch('api/logout.php', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            user_id: userData.id
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error('Error during logout:', error);
+            } finally {
+                // Clear user data and redirect to login page
+                localStorage.removeItem('user');
+                sessionStorage.removeItem('user');
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Initialize
+        async function initialize() {
+            initializeTheme();
+            const isValidSession = await checkSession();
+            if (!isValidSession) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const userData = JSON.parse(localStorage.getItem('user'));
+            document.getElementById('userName').textContent = userData.email.split('@')[0] || 'User';
+            
+            await loadCrops();
+        }
+
+        // Document ready
+        $(document).ready(function() {
+            initialize();
+        });
+    </script>
+</body>
+</html> 
